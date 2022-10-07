@@ -33,37 +33,33 @@ const resolvers = {
       const token = signToken(user);
       return { token, user };
     },
-    saveBook: async (parent, { body }, context) => {
+    saveBook: async (parent, { BookData }, context) => {
+      console.log("here");
+      console.log(BookData);
       if (context.user) {
         // console.log(user);
-        try {
-          const updatedUser = await User.findOneAndUpdate(
-            { _id: context._id },
-            { $addToSet: { savedBooks: body } },
-            { new: true, runValidators: true }
-          );
-          return updatedUser;
-        } catch (err) {
-          console.log(err);
-          return res.status(400).json(err);
-        }
+        const updatedUser = await User.findByIdAndUpdate(
+          { _id: context.user._id },
+          { $push: { savedBooks: { ...BookData } } },
+          { new: true }
+        );
+        console.log(updatedUser);
+        console.log(BookData.title);
+        console.log(context.user._id);
+        return updatedUser;
       }
+      throw new AuthenticationError("You need to be logged in!");
     },
-    removeBook: async (parent, args, context) => {
-        if (context.user) {
-            const updatedUser = await User.findOneAndUpdate(
-        { _id: context.user._id },
-        { $pull: { savedBooks: { bookId: params.bookId } } },
-        { new: true }
-      );
-        }
-      
-      if (!updatedUser) {
-        return res
-          .status(404)
-          .json({ message: "Couldn't find user with this id!" });
+    removeBook: async (parent, { params }, context) => {
+      if (context.user) {
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: context.user._id },
+          { $pull: { savedBooks: { bookId: params.bookId } } },
+          { new: true }
+        );
+        return updatedUser;
       }
-      return res.json(updatedUser);
+      throw new AuthenticationError("You need to be logged in!");
     },
   },
 };
